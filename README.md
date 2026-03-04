@@ -15,3 +15,9 @@
 | 文件 | 说明 |
 |------|------|
 | [token-refresh-queue.ts](typescript/token-refresh-queue.ts) | 并发 Token 刷新队列，解决多个请求同时 401 时的竞态条件 |
+
+### `/posts`
+
+| 文章 | 说明 |
+|------|------|
+| [并发 401 下的 Token 刷新竞态](posts/token-refresh-queue.md) | Deep dive：isRefreshing + 订阅者队列模式，以及隐藏的 Promise 泄漏 bug |
