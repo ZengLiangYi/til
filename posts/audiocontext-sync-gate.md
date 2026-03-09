@@ -93,17 +93,7 @@ await ctx.resume();
 
 这意味着 **`suspend()` 可以暂停整个时间轴**，而不仅仅是静音。
 
-这个性质让它成为一个天然的同步原语：当帧未到时冻结时间轴，帧到了再继续——音频和时钟始终只在"有帧可看"的时刻推进。
-
----
-
-## 心理模型：水坝闸门
-
-把音频时钟想象成一条河，帧是河里的船，播放器是下游的港口。
-
-**旧方案（缓冲阈值）：** 等河里有足够多的船之后，才打开闸门。一旦闸门打开就不再关闭——如果上游来船慢了，港口会等一会儿，但时间继续流逝。
-
-**新方案（suspend/resume 门控）：** 闸门默认关闭，只有当下一艘船（下一帧）确认在闸门口等待时，才打开放行一次，然后重新关闭等下一艘。
+这个性质让它成为一个天然的同步原语——用帧的到达来控制时间轴的开闸：
 
 ```
 帧 N+1 已就绪？
@@ -114,6 +104,8 @@ await ctx.resume();
 ---
 
 ## 实现
+
+音频解码和帧流接收是并行进行的——帧 0 可能在音频解码完成之前就到达，也可能更晚。实现中用 `audioReady` flag 跟踪音频是否就绪，调度器在两个事件上都能被触发：帧到达时，或音频就绪时。
 
 ### 1. AudioContext 创建后立即 suspend
 
@@ -138,20 +130,21 @@ const startTime = audioCtx.currentTime;
 ### 2. suspend/resume 门控函数
 
 ```typescript
+let audioCtx: AudioContext | null = null;
 let audioRunning = false;
 
 // 不检查 audioCtx.state——resume()/suspend() 是异步的，
 // state 属性的切换有延迟，检查它会导致 flag 与真实状态分裂。
 // 只用本地 flag 做幂等守卫。
 const ensureRunning = () => {
-  if (!audioRunning) {
+  if (!audioRunning && audioCtx) {
     audioRunning = true;
     audioCtx.resume().catch(() => {});
   }
 };
 
 const ensureSuspended = () => {
-  if (audioRunning) {
+  if (audioRunning && audioCtx) {
     audioRunning = false;
     audioCtx.suspend().catch(() => {});
   }
@@ -165,6 +158,7 @@ const ensureSuspended = () => {
 ### 3. 核心调度器
 
 ```typescript
+let audioReady = false; // 音频解码完成后置 true
 let lastDrawnFrame = -1;
 
 const tryAdvance = () => {
@@ -178,7 +172,14 @@ const tryAdvance = () => {
   }
 
   if (frames[nextNeeded] !== null) {
-    // 有帧可播 → 打开闸门
+    if (!audioReady) {
+      // 音频尚未就绪，rAF 轮询等待
+      // 此时 audioCtx 还不存在，不能调 ensureRunning
+      requestAnimationFrame(tryAdvance);
+      return;
+    }
+
+    // 有帧且音频就绪 → 打开闸门
     ensureRunning();
 
     // 检查时钟是否已到该帧时间（后端快于实时时限速）
@@ -246,6 +247,10 @@ const onFrameArrived = (index: number) => {
 | 与现有 close() 清理逻辑完全兼容 | Safari 较旧版本在 suspend 过渡中 close() 有内存泄漏风险 |
 
 **何时不适用**：如果视频帧来源稳定（本地文件、已缓冲的 HLS），直接用音频时钟驱动帧渲染更简单，不需要这套门控。这个模式的价值在于**网络不稳定的流式推送**场景。
+
+---
+
+这个方案把"同步"的责任从业务代码转移到了 AudioContext 本身——不需要手动计算音频和帧之间的时间差，不需要调整缓冲策略，状态也只有 `audioRunning` 这一个 flag。代价是引入了对 suspend/resume 异步性的理解门槛，以及停顿时无声音的 UX 取舍。
 
 ---
 
