@@ -9,9 +9,10 @@
 [进入博客](https://github.com/ZengLiangYi/til/issues?q=label%3Ablog)
 
 <!-- BLOG-LIST:START -->
-1. [用 AudioContext.suspend()/resume() 作为流式音视频的同步门控](https://github.com/ZengLiangYi/til/issues/3)
-2. [React 事件订阅的稳定引用问题：从 useEffect 到 useEffectEvent](https://github.com/ZengLiangYi/til/issues/2)
-3. [并发 401 下的 Token 刷新竞态：一个被低估的 Bug](https://github.com/ZengLiangYi/til/issues/1)
+1. [打破 Google 收录僵局：基于 Astro 与 Indexing API 的增量缓存推送实践](https://github.com/ZengLiangYi/til/issues/4)
+2. [用 AudioContext.suspend()/resume() 作为流式音视频的同步门控](https://github.com/ZengLiangYi/til/issues/3)
+3. [React 事件订阅的稳定引用问题：从 useEffect 到 useEffectEvent](https://github.com/ZengLiangYi/til/issues/2)
+4. [并发 401 下的 Token 刷新竞态：一个被低估的 Bug](https://github.com/ZengLiangYi/til/issues/1)
 <!-- BLOG-LIST:END -->
 
 ### `/react`
