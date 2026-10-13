@@ -16,6 +16,18 @@
 5. [并发 401 下的 Token 刷新竞态：一个被低估的 Bug](https://github.com/ZengLiangYi/til/issues/1)
 <!-- BLOG-LIST:END -->
 
+### `/css`
+
+| 文件 | 说明 |
+|------|------|
+| [carousel-subpixel-scale.css](css/carousel-subpixel-scale.css) | 轮播图与网格布局 1px 亚像素缝隙消除样式，通过 `transform: scale(1.002)` 零布局位移填补光栅化取整真空 |
+
+### `/nodejs`
+
+| 文件 | 说明 |
+|------|------|
+| [google-indexing-cache.mjs](nodejs/google-indexing-cache.mjs) | Google Indexing API 增量缓存推送脚本，比对 Sitemap `lastmod` 与本地持久化状态，受控在 200/天配额内 |
+
 ### `/react`
 
 | 文件 | 说明 |
