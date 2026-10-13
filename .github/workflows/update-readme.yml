@@ -2,7 +2,8 @@ name: Update README with Blog Posts
 
 on:
   issues:
-    types: [opened, edited, deleted, labeled, unlabeled, closed, reopened]
+    # 彻底移除 opened，避免与新建 issue 时的 labeled 产生双重触发竞态冲突
+    types: [labeled, unlabeled, closed, reopened, deleted, edited]
   workflow_dispatch:
 
 jobs:
@@ -11,6 +12,15 @@ jobs:
     permissions:
       contents: write
       issues: read
+    # 门控：
+    # 1. 手动触发，或当前 issue 带 blog 标签，或刚被剥离 blog 标签；
+    # 2. 如果是 edited 事件，仅在标题修改（changes.title != null）时触发，修改正文直接跳过
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        (contains(github.event.issue.labels.*.name, 'blog') || github.event.label.name == 'blog') &&
+        (github.event.action != 'edited' || github.event.changes.title != null)
+      )
     steps:
       - uses: actions/checkout@v4
 
@@ -49,4 +59,4 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git diff --quiet README.md || (git add README.md && git commit -m "docs: update blog list" && git push)
+          git diff --quiet README.md || (git add README.md && git commit -m "docs: update blog list" && git pull --rebase && git push)
